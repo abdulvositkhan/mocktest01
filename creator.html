@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Test yaratish</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{
+  margin:0;
+  min-height:100vh;
+  background:linear-gradient(135deg,#4f46e5,#22c55e);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.card{
+  background:#fff;
+  width:100%;
+  max-width:900px;
+  padding:30px;
+  border-radius:18px;
+  border:2px solid #e5e7eb;
+  box-shadow:0 25px 50px rgba(0,0,0,0.2);
+}
+h2,h3{margin-top:0}
+input,select{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:10px;
+  border:2px solid #e5e7eb;
+}
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+button{
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+  margin-top:12px;
+}
+.blue{background:#4f46e5;color:white}
+.green{background:#16a34a;color:white}
+.red{background:#dc2626;color:white}
+.qbox{
+  border:2px dashed #d1d5db;
+  padding:15px;
+  border-radius:12px;
+  margin-top:15px;
+}
+.qitem{
+  border:1px solid #e5e7eb;
+  padding:10px;
+  border-radius:10px;
+  margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>🛠 Test yaratish / tahrirlash</h2>
+
+<input id="testId" placeholder="Test ID (masalan: MAT2025)">
+
+<div class="row">
+  <input type="date" id="date">
+  <input type="number" id="duration" placeholder="Davomiylik (daq)">
+</div>
+
+<div class="row">
+  <input type="time" id="start">
+  <input type="time" id="end">
+</div>
+
+<hr>
+
+<h3>📂 Excel orqali savol yuklash (ixtiyoriy)</h3>
+<input type="file" id="excelFile" accept=".xlsx">
+<button class="blue" onclick="loadExcel()">Excel yuklash</button>
+<div id="excelMsg" style="margin-top:10px;font-weight:bold"></div>
+<hr>
+
+<hr>
+
+<h3>✍️ Qo‘lda savol qo‘shish</h3>
+
+<div class="qbox">
+  <input id="qText" placeholder="Savol matni">
+  <input id="img" placeholder="Savol rasm URL (ixtiyoriy)">
+  <input id="a" placeholder="A variant">
+  <input id="b" placeholder="B variant">
+  <input id="c" placeholder="C variant">
+  <input id="d" placeholder="D variant">
+  <select id="correct">
+    <option value="">To‘g‘ri javob</option>
+    <option>A</option><option>B</option>
+    <option>C</option><option>D</option>
+  </select>
+  <button class="blue" onclick="addQuestion()">Savol qo‘shish</button>
+  <div id="count">Savollar: 0 / 50</div>
+</div>
+
+<button class="green" onclick="saveTest()">TESTNI SAQLASH</button>
+
+<hr>
+
+<h3>📋 Mavjud testlar</h3>
+<div id="tests"></div>
+
+<button class="blue" onclick="location.href='results.html'">📊 Natijalar</button>
+</div>
+
+<script>
+let questions=[];
+
+function addQuestion(){
+  if(questions.length>=50){alert("50 ta savol bo‘ldi");return;}
+  if(!qText.value||!correct.value){alert("Savol to‘liq emas");return;}
+
+  questions.push({
+    text:qText.value,
+    image:img.value,
+    options:{A:a.value,B:b.value,C:c.value,D:d.value},
+    correct:correct.value
+  });
+
+  qText.value=img.value=a.value=b.value=c.value=d.value="";
+  correct.value="";
+  count.innerText=`Savollar: ${questions.length} / 50`;
+  renderQuestions();
+}
+
+function saveTest(){
+  const allTests=JSON.parse(localStorage.getItem("allTests"))||{};
+  allTests[testId.value]={
+    date:date.value,
+    start:start.value,
+    end:end.value,
+    duration:duration.value,
+    questions:questions
+  };
+  localStorage.setItem("allTests",JSON.stringify(allTests));
+  alert("Test saqlandi");
+  showTests();
+}
+
+function showTests(){
+  tests.innerHTML="";
+  const allTests=JSON.parse(localStorage.getItem("allTests"))||{};
+  for(const id in allTests){
+    tests.innerHTML+=`
+      <div class="qitem">
+        <b>${id}</b>
+        <button onclick="editTest('${id}')">✏️</button>
+        <button class="red" onclick="deleteTest('${id}')">❌</button>
+      </div>`;
+  }
+}
+showTests();
+
+function editTest(id){
+  const t=JSON.parse(localStorage.getItem("allTests"))[id];
+  testId.value=id;
+  date.value=t.date;
+  start.value=t.start;
+  end.value=t.end;
+  duration.value=t.duration;
+  questions=t.questions;
+  count.innerText=`Savollar: ${questions.length} / 50`;
+  renderQuestions();
+  alert("Savollarni o‘zgartirib saqlashingiz mumkin");
+}
+
+function deleteTest(id){
+  const allTests=JSON.parse(localStorage.getItem("allTests"));
+  delete allTests[id];
+  localStorage.setItem("allTests",JSON.stringify(allTests));
+  showTests();
+}
+
+function renderQuestions(){
+  tests.innerHTML="";
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+function loadExcel(){
+  const file = excelFile.files[0];
+  if(!file){
+    alert("Excel fayl tanlanmadi");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, {type:"array"});
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    rows.forEach(r=>{
+      if(questions.length >= 50) return;
+
+      if(!r.Savol || !r.Togri) return;
+
+      questions.push({
+        text: r.Savol,
+        image: r.Rasm || "",
+        options:{
+          A:r.A || "",
+          B:r.B || "",
+          C:r.C || "",
+          D:r.D || ""
+        },
+        correct: r.Togri
+      });
+    });
+
+    excelMsg.innerText =
+      `Excel yuklandi: ${questions.length} ta savol`;
+    count.innerText =
+      `Savollar: ${questions.length} / 50`;
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+</script>
+
+</body>
+</html>

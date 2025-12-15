@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testga kirish</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  font-family:Arial, sans-serif;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:linear-gradient(135deg,#4f46e5,#22c55e);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.card{
+  background:#ffffff;
+  width:100%;
+  max-width:450px;
+  padding:35px 30px;
+  border-radius:18px;
+  border:2px solid #e5e7eb;
+  box-shadow:0 25px 50px rgba(0,0,0,0.2);
+}
+
+h2{
+  margin-top:0;
+  margin-bottom:25px;
+  text-align:center;
+  color:#111827;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  margin-top:14px;
+  font-size:16px;
+  border-radius:12px;
+  border:2px solid #e5e7eb;
+}
+
+input:focus{
+  outline:none;
+  border-color:#4f46e5;
+}
+
+button{
+  width:100%;
+  padding:15px;
+  margin-top:22px;
+  font-size:16px;
+  font-weight:bold;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  background:#16a34a;
+  color:white;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>👨‍🎓 Testga kirish</h2>
+
+  <input id="ism" placeholder="Ism">
+  <input id="familiya" placeholder="Familiya">
+  <input id="testId" placeholder="Test ID">
+
+  <button onclick="startTest()">TESTNI BOSHLASH</button>
+</div>
+
+<script>
+function startTest(){
+  if(!ism.value || !familiya.value || !testId.value){
+    alert("Iltimos, barcha maydonlarni to‘ldiring");
+    return;
+  }
+
+  localStorage.setItem("currentUser", JSON.stringify({
+    ism: ism.value.trim(),
+    familiya: familiya.value.trim()
+  }));
+
+  localStorage.setItem("currentTestId", testId.value.trim());
+
+  location.href = "test.html";
+}
+</script>
+
+</body>
+</html>
