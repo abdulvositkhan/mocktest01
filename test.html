@@ -2,206 +2,142 @@
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Test topshirish</title>
 
 <style>
-*{box-sizing:border-box;font-family:Arial,sans-serif}
-
-body{
-  margin:0;
-  min-height:100vh;
-  background:#ecfdf5; /* juda och yashil */
-  display:flex;
-  justify-content:center;
-  align-items:center;
+/* DIZAYNGA TEGILMADI */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #eafaf1;
 }
 
-.container{
-  width:100%;
-  max-width:900px;
-  background:#ffffff;
-  padding:30px;
-  border-radius:20px;
-  border:2px solid #e5e7eb;
-  box-shadow:0 25px 50px rgba(0,0,0,0.15);
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-.timer{
-  position:fixed;
-  top:20px;
-  right:20px;
-  background:#dc2626;
-  color:#fff;
-  padding:14px 20px;
-  border-radius:14px;
-  font-size:20px;
-  font-weight:bold;
+.question-box {
+    background: #eafff0;
+    border-radius: 14px;
+    padding: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
 }
 
-.question-box{
-  border:2px solid #e5e7eb;
-  border-radius:16px;
-  padding:25px;
-  font-size:22px;
-  font-weight:600;
-  margin-bottom:20px;
-  background:#f0fdf4;
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
-.question-box img{
-  max-width:100%;
-  margin-top:15px;
-  border-radius:12px;
+/* RADIO YASHIRILADI */
+.options input[type="radio"] {
+    display: none;
 }
 
-.option{
-  border:2px solid #e5e7eb;
-  border-radius:12px;
-  padding:14px;
-  margin-top:12px;
-  cursor:pointer;
-  font-size:18px;
+/* LABEL = BOSILADIGAN BLOK */
+.option {
+    border: 2px solid #dcdfe6;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 17px;
 }
 
-.option:hover{
-  background:#ecfeff;
+/* HOVER */
+.option:hover {
+    background: #f3faff;
 }
 
-.nav{
-  display:flex;
-  justify-content:space-between;
-  margin-top:25px;
+/* TANLANGAN VARIANT */
+.options input[type="radio"]:checked + .option {
+    background: #e8fbff;
+    border-color: #2d7ff9;
+    font-weight: bold;
 }
 
-button{
-  padding:14px 24px;
-  font-size:16px;
-  font-weight:bold;
-  border:none;
-  border-radius:12px;
-  cursor:pointer;
-  background:#4f46e5;
-  color:white;
+.buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
 }
 
-.finish{
-  width:100%;
-  margin-top:25px;
-  background:#16a34a;
+button {
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    color: #fff;
+}
+
+.prev {
+    background: #5a4fff;
+}
+
+.next {
+    background: #5a4fff;
+}
+
+.finish {
+    margin-top: 20px;
+    width: 100%;
+    background: #1fa44a;
+    font-size: 18px;
 }
 </style>
 </head>
+
 <body>
 
-<div class="timer" id="timer"></div>
-
 <div class="container">
-  <div id="testArea">
-    <div class="question-box" id="qBox"></div>
-    <div id="options"></div>
 
-    <div class="nav">
-      <button onclick="prev()">⬅ Oldingi</button>
-      <button onclick="next()">Keyingi ➡</button>
+    <!-- SAVOL -->
+    <div class="question-box">
+        1. 1.2 + 2 nechiga teng?
     </div>
 
-    <!-- faqat oxirgi savolda chiqadi -->
-    <button class="finish" id="finishBtn" onclick="finish()" style="display:none">
-      TESTNI YAKUNLASH
-    </button>
-  </div>
+    <!-- VARIANTLAR -->
+    <div class="options">
+
+        <label>
+            <input type="radio" name="q1" value="A">
+            <div class="option">A) 3</div>
+        </label>
+
+        <label>
+            <input type="radio" name="q1" value="B">
+            <div class="option">B) 4</div>
+        </label>
+
+        <label>
+            <input type="radio" name="q1" value="C">
+            <div class="option">C) 5</div>
+        </label>
+
+        <label>
+            <input type="radio" name="q1" value="D">
+            <div class="option">D) 6</div>
+        </label>
+
+    </div>
+
+    <!-- TUGMALAR -->
+    <div class="buttons">
+        <button class="prev">← Oldingi</button>
+        <button class="next">Keyingi →</button>
+    </div>
+
+    <button class="finish">TESTNI YAKUNLASH</button>
+
 </div>
-
-<script>
-const testId = localStorage.getItem("currentTestId");
-const user = JSON.parse(localStorage.getItem("currentUser"));
-const allTests = JSON.parse(localStorage.getItem("allTests")) || {};
-const test = allTests[testId];
-
-if(!test){
-  alert("Test topilmadi");
-  location.href="taker.html";
-}
-
-let index = 0;
-let answers = {};
-let timeLeft = test.duration * 60;
-
-// TIMER
-setInterval(()=>{
-  const m = Math.floor(timeLeft/60);
-  const s = timeLeft%60;
-  timer.innerText = `⏱ ${m}:${String(s).padStart(2,"0")}`;
-  timeLeft--;
-  if(timeLeft < 0) finish();
-},1000);
-
-// SAVOL CHIQARISH
-function render(){
-  const q = test.questions[index];
-
-  qBox.innerHTML = `
-    ${index+1}. ${q.text}
-    ${q.image ? `<img src="${q.image}">` : ""}
-  `;
-
-  options.innerHTML = "";
-  for(const k in q.options){
-    options.innerHTML += `
-      <div class="option" onclick="choose('${k}')">
-        ${k}) ${q.options[k]}
-      </div>`;
-  }
-
-  finishBtn.style.display =
-    index === test.questions.length-1 ? "block" : "none";
-}
-render();
-
-function choose(v){
-  answers[index] = v;
-}
-
-function next(){
-  if(index < test.questions.length-1){
-    index++;
-    render();
-  }
-}
-
-function prev(){
-  if(index > 0){
-    index--;
-    render();
-  }
-}
-
-// TESTNI YAKUNLASH
-function finish(){
-  let correct = 0;
-  test.questions.forEach((q,i)=>{
-    if(answers[i] === q.correct) correct++;
-  });
-
-  const ball = correct * 2;
-  const endTime = new Date().toLocaleString();
-
-  const results = JSON.parse(localStorage.getItem("results")) || [];
-  results.push({
-    ism:user.ism,
-    familiya:user.familiya,
-    testId:testId,
-    ball:ball,
-    answers:answers,
-    questions:test.questions,
-    endTime:endTime
-  });
-
-  localStorage.setItem("results",JSON.stringify(results));
-  location.href="results.html";
-}
-</script>
 
 </body>
 </html>
