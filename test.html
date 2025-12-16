@@ -63,11 +63,6 @@ body{
   cursor:pointer;
   font-size:18px;
 }
-
-.option:hover{
-  background:#ecfeff;
-}
-
 .option.selected{
   background:#dbeafe;
   border-color:#2563eb;
@@ -95,6 +90,34 @@ button{
   margin-top:25px;
   background:#16a34a;
 }
+
+/* ===== MODAL ===== */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+.modal-box{
+  background:#fff;
+  padding:30px;
+  border-radius:18px;
+  width:100%;
+  max-width:420px;
+  text-align:center;
+  box-shadow:0 25px 50px rgba(0,0,0,0.25);
+}
+.modal-box h2{
+  margin-top:0;
+}
+.modal-box .score{
+  font-size:38px;
+  font-weight:bold;
+  margin:12px 0;
+}
 </style>
 </head>
 <body>
@@ -102,18 +125,26 @@ button{
 <div class="timer" id="timer"></div>
 
 <div class="container">
-  <div id="testArea">
-    <div class="question-box" id="qBox"></div>
-    <div id="options"></div>
+  <div class="question-box" id="qBox"></div>
+  <div id="options"></div>
 
-    <div class="nav">
-      <button onclick="prev()">⬅ Oldingi</button>
-      <button onclick="next()">Keyingi ➡</button>
-    </div>
+  <div class="nav">
+    <button onclick="prev()">⬅ Oldingi</button>
+    <button onclick="next()">Keyingi ➡</button>
+  </div>
 
-    <button class="finish" id="finishBtn" onclick="finish()" style="display:none">
-      TESTNI YAKUNLASH
-    </button>
+  <button class="finish" id="finishBtn" onclick="finish()" style="display:none">
+    TESTNI YAKUNLASH
+  </button>
+</div>
+
+<!-- ===== NATIJA OYNASI ===== -->
+<div class="modal" id="resultModal">
+  <div class="modal-box">
+    <h2 id="resultTitle"></h2>
+    <div class="score" id="resultScore"></div>
+    <div id="resultInfo"></div>
+    <button onclick="goResult()">📊 Natijani ko‘rish</button>
   </div>
 </div>
 
@@ -123,90 +154,115 @@ const user = JSON.parse(localStorage.getItem("currentUser"));
 const allTests = JSON.parse(localStorage.getItem("allTests")) || {};
 const test = allTests[testId];
 
-if(!test){
+if(!test || !user){
   alert("Test topilmadi");
-  location.href="taker.html";
+  location.href="index.html";
 }
 
 let index = 0;
 let answers = {};
 let timeLeft = test.duration * 60;
+let isFinished = false;
+let finalResult = null;
 
-setInterval(()=>{
+/* ===== TIMER ===== */
+const timerInterval = setInterval(()=>{
   const m = Math.floor(timeLeft/60);
-  const s = timeLeft%60;
+  const s = timeLeft % 60;
   timer.innerText = `⏱ ${m}:${String(s).padStart(2,"0")}`;
   timeLeft--;
-  if(timeLeft < 0) finish();
+  if(timeLeft < 0){
+    clearInterval(timerInterval);
+    finish();
+  }
 },1000);
 
-<script>
-function yakunla() {
-  const answers = {
-    q1: "B",
-    q2: "C",
-    q3: "B",
-    q4: "C",
-    q5: "B"
-  };
-
-  let togri = 0;
-  let jamiSavol = Object.keys(answers).length;
-
-  for (let q in answers) {
-    let tanlangan = document.querySelector(`input[name="${q}"]:checked`);
-    if (tanlangan && tanlangan.value === answers[q]) {
-      togri++;
-    }
-  }
-
-  let ball = togri * 2;
-  let rang = "";
-  let matn = "";
-
-  if (ball < 60) {
-    rang = "red";
-    matn = "Attestatsiya Mock testdan o‘tilmadi";
-  } else if (ball <= 69) {
-    rang = "orange";
-    matn = "Ikkinchi toifa balini to‘pladingiz";
-  } else if (ball <= 79) {
-    rang = "yellow";
-    matn = "Birinchi toifa balini to‘pladingiz";
-  } else {
-    rang = "blue";
-    matn = "Oliy toifa balini to‘pladingiz";
-  }
-
-  document.getElementById("natija").innerHTML = `
-    <div class="result ${rang}">
-      <p>Natija: ${ball} / ${jamiSavol*2}</p>
-      <p>${matn}</p>
-      <p>To‘g‘ri javoblar: ${togri} / ${jamiSavol}</p>
-    </div>
+/* ===== RENDER ===== */
+function render(){
+  const q = test.questions[index];
+  qBox.innerHTML = `
+    ${index+1}. ${q.text}
+    ${q.image ? `<img src="${q.image}">` : ""}
   `;
+
+  options.innerHTML = "";
+  for(const k in q.options){
+    const sel = answers[index] === k ? "selected" : "";
+    options.innerHTML += `
+      <div class="option ${sel}" onclick="choose('${k}')">
+        ${k}) ${q.options[k]}
+      </div>`;
+  }
+
+  finishBtn.style.display =
+    index === test.questions.length-1 ? "block" : "none";
 }
-</script>
+render();
+
+function choose(v){
+  answers[index] = v;
+  render();
+}
+
+function next(){
+  if(index < test.questions.length-1){
+    index++;
+    render();
+  }
+}
+
+function prev(){
+  if(index > 0){
+    index--;
+    render();
+  }
+}
+
+/* ===== FINISH ===== */
 function finish(){
+  if(isFinished) return;
+  isFinished = true;
+  clearInterval(timerInterval);
+
   let correct = 0;
   test.questions.forEach((q,i)=>{
     if(answers[i] === q.correct) correct++;
   });
 
+  const wrong = test.questions.length - correct;
   const ball = correct * 2;
   const endTime = new Date().toLocaleString();
 
-  const results = JSON.parse(localStorage.getItem("results")) || [];
-  results.push({
+  let title="";
+  if(ball < 60) title="❌ Attestatsiya Mock testidan o‘tmadingiz";
+  else if(ball < 70) title="🟠 Ikkinchi toifa balini to‘pladingiz";
+  else if(ball < 80) title="🟡 Birinchi toifa balini to‘pladingiz";
+  else title="🔵 Oliy toifa balini to‘pladingiz";
+
+  finalResult = {
     ism:user.ism,
     familiya:user.familiya,
-    testId:testId,
-    ball:ball,
-    answers:answers,
+    testId,
+    ball,
+    answers,
     questions:test.questions,
-    endTime:endTime
-  });
+    endTime
+  };
 
+  resultTitle.innerText = title;
+  resultScore.innerText = `${ball}/100`;
+  resultInfo.innerHTML = `
+    ✅ To‘g‘ri javoblar: <b>${correct}</b><br>
+    ❌ Noto‘g‘ri javoblar: <b>${wrong}</b>
+  `;
+
+  resultModal.style.display = "flex";
+}
+
+/* ===== SAVE & GO ===== */
+function goResult(){
+  const results = JSON.parse(localStorage.getItem("results")) || [];
+  results.push(finalResult);
   localStorage.setItem("results",JSON.stringify(results));
   location.href="results.html";
 }
@@ -214,4 +270,3 @@ function finish(){
 
 </body>
 </html>
-
