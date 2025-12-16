@@ -60,6 +60,17 @@ button{
   border-radius:10px;
   margin-top:10px;
 }
+
+/* 🔹 PREVIEW uchun minimal stil */
+.preview{
+  margin-top:10px;
+  display:none;
+}
+.preview img{
+  max-width:100%;
+  border-radius:10px;
+  border:1px solid #e5e7eb;
+}
 </style>
 </head>
 <body>
@@ -81,19 +92,17 @@ button{
 
 <hr>
 
-<h3>📂 Excel orqali savol yuklash (ixtiyoriy)</h3>
-<input type="file" id="excelFile" accept=".xlsx">
-<button class="blue" onclick="loadExcel()">Excel yuklash</button>
-<div id="excelMsg" style="margin-top:10px;font-weight:bold"></div>
-<hr>
-
-<hr>
-
 <h3>✍️ Qo‘lda savol qo‘shish</h3>
 
 <div class="qbox">
   <input id="qText" placeholder="Savol matni">
-  <input id="img" placeholder="Savol rasm URL (ixtiyoriy)">
+  <input id="img" placeholder="Savol rasm URL (ixtiyoriy)" oninput="previewImage()">
+
+  <!-- 🔹 RASM PREVIEW -->
+  <div class="preview" id="imgPreview">
+    <img id="previewImg">
+  </div>
+
   <input id="a" placeholder="A variant">
   <input id="b" placeholder="B variant">
   <input id="c" placeholder="C variant">
@@ -119,12 +128,17 @@ button{
 
 <script>
 let questions=[];
-function getBase64(file, callback) {
-  const reader = new FileReader();
-  reader.onload = () => callback(reader.result);
-  reader.readAsDataURL(file);
-}
 
+/* 🔹 PREVIEW LOGIKASI (xavfsiz) */
+function previewImage(){
+  const url = img.value.trim();
+  if(url){
+    previewImg.src = url;
+    imgPreview.style.display = "block";
+  }else{
+    imgPreview.style.display = "none";
+  }
+}
 
 function addQuestion(){
   if(questions.length>=50){alert("50 ta savol bo‘ldi");return;}
@@ -132,23 +146,13 @@ function addQuestion(){
 
   questions.push({
     text:qText.value,
-    if (imgFile.files.length > 0) {
-  getBase64(imgFile.files[0], base64 => {
-    q.image = base64;
-    questions.push(q);
-    renderQuestions();
-  });
-} else {
-  q.image = imgUrl.value || "";
-  questions.push(q);
-  renderQuestions();
-}
-
+    image:img.value,
     options:{A:a.value,B:b.value,C:c.value,D:d.value},
     correct:correct.value
   });
 
   qText.value=img.value=a.value=b.value=c.value=d.value="";
+  previewImage();
   correct.value="";
   count.innerText=`Savollar: ${questions.length} / 50`;
   renderQuestions();
@@ -182,20 +186,7 @@ function showTests(){
 }
 showTests();
 
-function editTest(id)
-questions = test.questions;
-renderQuestions();
-function editTest(id) {
-  const tests = JSON.parse(localStorage.getItem("tests"));
-  const test = tests.find(t => t.id === id);
-
-  testId.value = test.id;
-  duration.value = test.duration;
-
-  questions = test.questions;
-  renderQuestions();
-}
-{
+function editTest(id){
   const t=JSON.parse(localStorage.getItem("allTests"))[id];
   testId.value=id;
   date.value=t.date;
@@ -217,50 +208,6 @@ function deleteTest(id){
 
 function renderQuestions(){
   tests.innerHTML="";
-}
-</script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<script>
-function loadExcel(){
-  const file = excelFile.files[0];
-  if(!file){
-    alert("Excel fayl tanlanmadi");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = new Uint8Array(e.target.result);
-    const wb = XLSX.read(data, {type:"array"});
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
-
-    rows.forEach(r=>{
-      if(questions.length >= 50) return;
-
-      if(!r.Savol || !r.Togri) return;
-
-      questions.push({
-        text: r.Savol,
-        image: r.Rasm || "",
-        options:{
-          A:r.A || "",
-          B:r.B || "",
-          C:r.C || "",
-          D:r.D || ""
-        },
-        correct: r.Togri
-      });
-    });
-
-    excelMsg.innerText =
-      `Excel yuklandi: ${questions.length} ta savol`;
-    count.innerText =
-      `Savollar: ${questions.length} / 50`;
-  };
-
-  reader.readAsArrayBuffer(file);
 }
 </script>
 
