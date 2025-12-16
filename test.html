@@ -140,47 +140,53 @@ setInterval(()=>{
   if(timeLeft < 0) finish();
 },1000);
 
-function render(){
-  const q = test.questions[index];
+<script>
+function yakunla() {
+  const answers = {
+    q1: "B",
+    q2: "C",
+    q3: "B",
+    q4: "C",
+    q5: "B"
+  };
 
-  qBox.innerHTML = `
-    ${index+1}. ${q.text}
-    ${q.image ? `<img src="${q.image}">` : ""}
+  let togri = 0;
+  let jamiSavol = Object.keys(answers).length;
+
+  for (let q in answers) {
+    let tanlangan = document.querySelector(`input[name="${q}"]:checked`);
+    if (tanlangan && tanlangan.value === answers[q]) {
+      togri++;
+    }
+  }
+
+  let ball = togri * 2;
+  let rang = "";
+  let matn = "";
+
+  if (ball < 60) {
+    rang = "red";
+    matn = "Attestatsiya Mock testdan o‘tilmadi";
+  } else if (ball <= 69) {
+    rang = "orange";
+    matn = "Ikkinchi toifa balini to‘pladingiz";
+  } else if (ball <= 79) {
+    rang = "yellow";
+    matn = "Birinchi toifa balini to‘pladingiz";
+  } else {
+    rang = "blue";
+    matn = "Oliy toifa balini to‘pladingiz";
+  }
+
+  document.getElementById("natija").innerHTML = `
+    <div class="result ${rang}">
+      <p>Natija: ${ball} / ${jamiSavol*2}</p>
+      <p>${matn}</p>
+      <p>To‘g‘ri javoblar: ${togri} / ${jamiSavol}</p>
+    </div>
   `;
-
-  options.innerHTML = "";
-  for(const k in q.options){
-    const selected = answers[index] === k ? "selected" : "";
-    options.innerHTML += `
-      <div class="option ${selected}" onclick="choose('${k}')">
-        ${k}) ${q.options[k]}
-      </div>`;
-  }
-
-  finishBtn.style.display =
-    index === test.questions.length-1 ? "block" : "none";
 }
-render();
-
-function choose(v){
-  answers[index] = v;
-  render();
-}
-
-function next(){
-  if(index < test.questions.length-1){
-    index++;
-    render();
-  }
-}
-
-function prev(){
-  if(index > 0){
-    index--;
-    render();
-  }
-}
-
+</script>
 function finish(){
   let correct = 0;
   test.questions.forEach((q,i)=>{
@@ -208,3 +214,4 @@ function finish(){
 
 </body>
 </html>
+
