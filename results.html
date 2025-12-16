@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test topshirish</title>
+<title>Test natijalari</title>
 
 <style>
 *{box-sizing:border-box;font-family:Arial,sans-serif}
@@ -14,195 +14,211 @@ body{
   background:#ecfdf5;
   display:flex;
   justify-content:center;
-  align-items:center;
+  align-items:flex-start;
+  padding:30px;
 }
 
 .container{
   width:100%;
-  max-width:900px;
+  max-width:1100px;
   background:#ffffff;
-  padding:30px;
-  border-radius:20px;
+  padding:35px;
+  border-radius:22px;
   border:2px solid #e5e7eb;
   box-shadow:0 25px 50px rgba(0,0,0,0.15);
 }
 
-.timer{
-  position:fixed;
-  top:20px;
-  right:20px;
-  background:#dc2626;
-  color:#fff;
-  padding:14px 20px;
-  border-radius:14px;
-  font-size:20px;
-  font-weight:bold;
+h1{
+  text-align:center;
+  margin-top:0;
 }
 
-.question-box{
-  border:2px solid #e5e7eb;
-  border-radius:16px;
-  padding:25px;
-  font-size:22px;
-  font-weight:600;
-  margin-bottom:20px;
-  background:#f0fdf4;
-}
-
-.question-box img{
-  max-width:100%;
-  margin-top:15px;
-  border-radius:12px;
-}
-
-.option{
-  border:2px solid #e5e7eb;
-  border-radius:12px;
-  padding:14px;
-  margin-top:12px;
-  cursor:pointer;
-  font-size:18px;
-}
-
-.option:hover{
-  background:#ecfeff;
-}
-
-.option.selected{
-  background:#dbeafe;
-  border-color:#2563eb;
-}
-
-.nav{
+.actions{
   display:flex;
-  justify-content:space-between;
-  margin-top:25px;
+  justify-content:center;
+  gap:15px;
+  margin-bottom:25px;
 }
 
-button{
-  padding:14px 24px;
-  font-size:16px;
+.actions button{
+  padding:12px 18px;
   font-weight:bold;
   border:none;
-  border-radius:12px;
+  border-radius:10px;
   cursor:pointer;
   background:#4f46e5;
   color:white;
 }
 
-.finish{
-  width:100%;
-  margin-top:25px;
-  background:#16a34a;
+/* SUMMARY */
+.summary{
+  text-align:center;
+  padding:30px;
+  border-radius:18px;
+  margin-bottom:30px;
 }
+
+.red{background:#fee2e2}
+.orange{background:#ffedd5}
+.yellow{background:#fef9c3}
+.blue{background:#dbeafe}
+
+.big{
+  font-size:40px;
+  font-weight:bold;
+}
+
+.user{
+  font-size:20px;
+  margin-bottom:10px;
+}
+
+.time{
+  margin-top:10px;
+  color:#374151;
+}
+
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+
+th,td{
+  border:1px solid #e5e7eb;
+  padding:12px;
+  text-align:center;
+}
+
+th{
+  background:#f3f4f6;
+}
+
+tr:nth-child(even){
+  background:#f9fafb;
+}
+
+.low{color:#dc2626;font-weight:bold}
+.mid{color:#d97706;font-weight:bold}
+.high{color:#16a34a;font-weight:bold}
 </style>
 </head>
 <body>
 
-<div class="timer" id="timer"></div>
-
 <div class="container">
-  <div id="testArea">
-    <div class="question-box" id="qBox"></div>
-    <div id="options"></div>
+  <h1>📊 Test natijalari</h1>
 
-    <div class="nav">
-      <button onclick="prev()">⬅ Oldingi</button>
-      <button onclick="next()">Keyingi ➡</button>
-    </div>
-
-    <button class="finish" id="finishBtn" onclick="finish()" style="display:none">
-      TESTNI YAKUNLASH
-    </button>
+  <div class="actions">
+    <button onclick="exportExcel()">📥 Excel yuklash</button>
+    <button onclick="exportPDF()">📄 PDF yuklash</button>
   </div>
+
+  <!-- OXIRGI NATIJA -->
+  <div id="summary"></div>
+
+  <h2>📋 Barcha natijalar</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Ism</th>
+        <th>Familiya</th>
+        <th>Test ID</th>
+        <th>Ball</th>
+        <th>Tugagan vaqt</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
 </div>
 
 <script>
-const testId = localStorage.getItem("currentTestId");
-const user = JSON.parse(localStorage.getItem("currentUser"));
-const allTests = JSON.parse(localStorage.getItem("allTests")) || {};
-const test = allTests[testId];
+const results = JSON.parse(localStorage.getItem("results")) || [];
+const summary = document.getElementById("summary");
+const rows = document.getElementById("rows");
 
-if(!test){
-  alert("Test topilmadi");
-  location.href="taker.html";
-}
+if(results.length === 0){
+  summary.innerHTML = "<b>Natijalar mavjud emas</b>";
+}else{
+  const last = results[results.length-1];
+  const ball = last.ball;
 
-let index = 0;
-let answers = {};
-let timeLeft = test.duration * 60;
+  let cls="red", text="Attestatsiya Mock testidan o‘tmadi";
+  if(ball >= 80){
+    cls="blue"; text="Oliy toifa balini to‘pladingiz";
+  }else if(ball >= 70){
+    cls="yellow"; text="Birinchi toifa balini to‘pladingiz";
+  }else if(ball >= 60){
+    cls="orange"; text="Ikkinchi toifa balini to‘pladingiz";
+  }
 
-setInterval(()=>{
-  const m = Math.floor(timeLeft/60);
-  const s = timeLeft%60;
-  timer.innerText = `⏱ ${m}:${String(s).padStart(2,"0")}`;
-  timeLeft--;
-  if(timeLeft < 0) finish();
-},1000);
-
-function render(){
-  const q = test.questions[index];
-
-  qBox.innerHTML = `
-    ${index+1}. ${q.text}
-    ${q.image ? `<img src="${q.image}">` : ""}
+  summary.innerHTML = `
+    <div class="summary ${cls}">
+      <div class="user">${last.ism} ${last.familiya}</div>
+      <div class="big">${ball}/100</div>
+      <div>${text}</div>
+      <div class="time">Test tugagan vaqt: ${last.endTime}</div>
+    </div>
   `;
 
-  options.innerHTML = "";
-  for(const k in q.options){
-    const selected = answers[index] === k ? "selected" : "";
-    options.innerHTML += `
-      <div class="option ${selected}" onclick="choose('${k}')">
-        ${k}) ${q.options[k]}
-      </div>`;
-  }
-
-  finishBtn.style.display =
-    index === test.questions.length-1 ? "block" : "none";
+  results.forEach((r,i)=>{
+    let scoreCls = r.ball >= 80 ? "high" : r.ball >= 60 ? "mid" : "low";
+    rows.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${r.ism}</td>
+        <td>${r.familiya}</td>
+        <td>${r.testId}</td>
+        <td class="${scoreCls}">${r.ball}</td>
+        <td>${r.endTime}</td>
+      </tr>
+    `;
+  });
 }
-render();
+</script>
 
-function choose(v){
-  answers[index] = v;
-  render();
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+function exportExcel(){
+  if(results.length === 0){ alert("Natija yo‘q"); return; }
+
+  const sheetData = results.map(r=>({
+    Ism:r.ism,
+    Familiya:r.familiya,
+    TestID:r.testId,
+    Ball:r.ball,
+    Tugagan_vaqt:r.endTime
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Natijalar");
+  XLSX.writeFile(wb, "natijalar.xlsx");
 }
+</script>
 
-function next(){
-  if(index < test.questions.length-1){
-    index++;
-    render();
-  }
-}
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+function exportPDF(){
+  if(results.length === 0){ alert("Natija yo‘q"); return; }
 
-function prev(){
-  if(index > 0){
-    index--;
-    render();
-  }
-}
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
 
-function finish(){
-  let correct = 0;
-  test.questions.forEach((q,i)=>{
-    if(answers[i] === q.correct) correct++;
+  pdf.text("Attestatsiya Mock Test Natijalari", 10, 10);
+  let y = 20;
+
+  results.forEach((r,i)=>{
+    pdf.text(
+      `${i+1}) ${r.ism} ${r.familiya} — ${r.ball}/100`,
+      10, y
+    );
+    y += 8;
   });
 
-  const ball = correct * 2;
-  const endTime = new Date().toLocaleString();
-
-  const results = JSON.parse(localStorage.getItem("results")) || [];
-  results.push({
-    ism:user.ism,
-    familiya:user.familiya,
-    testId:testId,
-    ball:ball,
-    answers:answers,
-    questions:test.questions,
-    endTime:endTime
-  });
-
-  localStorage.setItem("results",JSON.stringify(results));
-  location.href="results.html";
+  pdf.save("natijalar.pdf");
 }
 </script>
 
