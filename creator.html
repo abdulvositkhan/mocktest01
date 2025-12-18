@@ -7,16 +7,14 @@
 
 <style>
 *{box-sizing:border-box;font-family:Arial,sans-serif}
-
 body{
   margin:0;
   min-height:100vh;
   background:linear-gradient(135deg,#4f46e5,#22c55e);
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
 }
-
 .card{
   background:#fff;
   width:100%;
@@ -26,9 +24,6 @@ body{
   border:2px solid #e5e7eb;
   box-shadow:0 25px 50px rgba(0,0,0,0.2);
 }
-
-h2,h3{margin-top:0}
-
 input,select{
   width:100%;
   padding:12px;
@@ -36,13 +31,7 @@ input,select{
   border-radius:10px;
   border:2px solid #e5e7eb;
 }
-
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 button{
   padding:12px;
   border:none;
@@ -51,43 +40,28 @@ button{
   cursor:pointer;
   margin-top:12px;
 }
-
 .blue{background:#4f46e5;color:white}
 .green{background:#16a34a;color:white}
 .red{background:#dc2626;color:white}
-
-.qbox{
-  border:2px dashed #d1d5db;
-  padding:15px;
-  border-radius:12px;
-  margin-top:15px;
-}
-
-.qitem{
-  border:1px solid #e5e7eb;
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
-}
-
-/* PREVIEW */
-.preview{
-  margin-top:10px;
-  display:none;
-}
-.preview img{
-  max-width:100%;
-  border-radius:10px;
-  border:1px solid #e5e7eb;
-}
+.qbox{border:2px dashed #d1d5db;padding:15px;border-radius:12px;margin-top:15px}
+.qitem{border:1px solid #e5e7eb;padding:10px;border-radius:10px;margin-top:10px}
+.preview{display:none;margin-top:10px}
+.preview img{max-width:100%;border-radius:10px}
 </style>
 </head>
 <body>
 
+<script>
+/* ADMIN HIMOYASI */
+if(localStorage.getItem("adminAuth")!=="true"){
+  location.href="admin-login.html";
+}
+</script>
+
 <div class="card">
 <h2>🛠 Test yaratish / tahrirlash</h2>
 
-<input id="testId" placeholder="Test ID (masalan: MAT2025)">
+<input id="testId" placeholder="Test ID (MAT2025)">
 
 <div class="row">
   <input type="date" id="date">
@@ -104,17 +78,15 @@ button{
 <h3>📂 Excel orqali savol yuklash</h3>
 <input type="file" id="excelFile" accept=".xlsx">
 <button class="blue" onclick="loadExcel()">Excel yuklash</button>
-<div id="excelMsg" style="margin-top:10px;font-weight:bold"></div>
+<div id="excelMsg"></div>
 
 <hr>
 
-<h3>✍️ Qo‘lda savol qo‘shish</h3>
-
+<h3>✍️ Savol qo‘shish</h3>
 <div class="qbox">
   <input id="qText" placeholder="Savol matni">
-
-  <input id="imgUrl" placeholder="Savol rasm URL (ixtiyoriy)" oninput="previewFromUrl()">
-  <input type="file" id="imgFile" accept="image/*" onchange="previewFromFile()">
+  <input id="imgUrl" placeholder="Rasm URL" oninput="previewUrl()">
+  <input type="file" id="imgFile" accept="image/*" onchange="previewFile()">
 
   <div class="preview" id="imgPreview">
     <img id="previewImg">
@@ -127,10 +99,7 @@ button{
 
   <select id="correct">
     <option value="">To‘g‘ri javob</option>
-    <option>A</option>
-    <option>B</option>
-    <option>C</option>
-    <option>D</option>
+    <option>A</option><option>B</option><option>C</option><option>D</option>
   </select>
 
   <button class="blue" onclick="addQuestion()">Savol qo‘shish</button>
@@ -140,223 +109,126 @@ button{
 <button class="green" onclick="saveTest()">TESTNI SAQLASH</button>
 
 <hr>
-
-<h3>📋 Mavjud testlar</h3>
-<div id="tests"></div>
-  <hr>
-<h4>📚 Saqlangan testlar</h2>
+<h3>📚 Saqlangan testlar</h3>
 <div id="savedTests"></div>
 
-
-<button class="blue" onclick="location.href='results.html'">📊 Natijalar</button>
+<div style="text-align:center;margin-top:20px;font-weight:bold;color:#4f46e5">
+@Ped_Life_Uz
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+let questions=[];
+
+/* PREVIEW */
+function previewUrl(){
+  if(imgUrl.value){
+    previewImg.src=imgUrl.value;
+    imgPreview.style.display="block";
+  }else imgPreview.style.display="none";
+}
+function previewFile(){
+  const f=imgFile.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    previewImg.src=e.target.result;
+    imgPreview.style.display="block";
+  };
+  r.readAsDataURL(f);
+}
+
+/* ADD QUESTION */
+function addQuestion(){
+  if(!qText.value || !correct.value) return alert("Savol to‘liq emas");
+  if(questions.length>=50) return alert("50 ta savol bo‘ldi");
+
+  questions.push({
+    text:qText.value,
+    image:imgFile.files[0]?previewImg.src:imgUrl.value,
+    options:{A:a.value,B:b.value,C:c.value,D:d.value},
+    correct:correct.value
+  });
+
+  qText.value=imgUrl.value=a.value=b.value=c.value=d.value="";
+  imgFile.value="";
+  correct.value="";
+  imgPreview.style.display="none";
+  renderCount();
+}
+
+/* SAVE TEST */
+function saveTest(){
+  if(!testId.value) return alert("Test ID kiriting");
+  const all=JSON.parse(localStorage.getItem("allTests"))||{};
+  all[testId.value]={date:date.value,start:start.value,end:end.value,duration:duration.value,questions};
+  localStorage.setItem("allTests",JSON.stringify(all));
+  renderSavedTests();
+  alert("Test saqlandi");
+}
+
+/* SAVED TESTS */
 function renderSavedTests(){
-  const box = document.getElementById("savedTests");
-  const all = JSON.parse(localStorage.getItem("allTests")) || {};
-  box.innerHTML = "";
-
-  if(Object.keys(all).length === 0){
-    box.innerHTML = "<i>Hali test yo‘q</i>";
-    return;
-  }
-
+  const box=document.getElementById("savedTests");
+  const all=JSON.parse(localStorage.getItem("allTests"))||{};
+  box.innerHTML="";
   Object.keys(all).forEach(id=>{
-    box.innerHTML += `
+    box.innerHTML+=`
       <div class="qitem">
         <b>${id}</b>
-        <button onclick="editTest('${id}')">✏️ Tahrirlash</button>
-        <button class="red" onclick="deleteTest('${id}')">❌ O‘chirish</button>
-      </div>
-    `;
+        <button onclick="loadTest('${id}')">✏️</button>
+        <button class="red" onclick="removeTest('${id}')">❌</button>
+      </div>`;
   });
 }
-function editTest(id){
-  const all = JSON.parse(localStorage.getItem("allTests")) || {};
-  const t = all[id];
-  if(!t) return;
-
-  testId.value = id;
-  date.value = t.date || "";
-  start.value = t.start || "";
-  end.value = t.end || "";
-  duration.value = t.duration || "";
-
-  questions = t.questions || [];
-  editIndex = null;
-  render();
+function loadTest(id){
+  const t=JSON.parse(localStorage.getItem("allTests"))[id];
+  testId.value=id;
+  date.value=t.date;
+  start.value=t.start;
+  end.value=t.end;
+  duration.value=t.duration;
+  questions=t.questions||[];
+  renderCount();
 }
-function deleteTest(id){
-  if(!confirm("Testni o‘chirasizmi?")) return;
-  const all = JSON.parse(localStorage.getItem("allTests")) || {};
+function removeTest(id){
+  if(!confirm("O‘chirasizmi?")) return;
+  const all=JSON.parse(localStorage.getItem("allTests"));
   delete all[id];
-  localStorage.setItem("allTests", JSON.stringify(all));
+  localStorage.setItem("allTests",JSON.stringify(all));
   renderSavedTests();
 }
 
-<script>
-let questions = [];
-
-/* ===== IMAGE PREVIEW ===== */
-function previewFromUrl(){
-  const url = imgUrl.value.trim();
-  if(url){
-    previewImg.src = url;
-    imgPreview.style.display = "block";
-  }else{
-    imgPreview.style.display = "none";
-  }
-}
-
-function previewFromFile(){
-  const file = imgFile.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    previewImg.src = e.target.result;
-    imgPreview.style.display = "block";
-  };
-  reader.readAsDataURL(file);
-}
-
-/* ===== ADD QUESTION ===== */
-function addQuestion(){
-  if(questions.length >= 50){
-    alert("50 ta savol bo‘ldi");
-    return;
-  }
-  if(!qText.value || !correct.value){
-    alert("Savol to‘liq emas");
-    return;
-  }
-
-  let imageValue = imgUrl.value;
-  if(imgFile.files[0]){
-    imageValue = previewImg.src;
-  }
-
-  questions.push({
-    text: qText.value,
-    image: imageValue,
-    options:{
-      A:a.value,
-      B:b.value,
-      C:c.value,
-      D:d.value
-    },
-    correct: correct.value
-  });
-
-  qText.value = imgUrl.value = a.value = b.value = c.value = d.value = "";
-  imgFile.value = "";
-  correct.value = "";
-  imgPreview.style.display="none";
-
-  count.innerText = `Savollar: ${questions.length} / 50`;
-}
-
-/* ===== SAVE TEST ===== */
-function saveTest(){
-  if(!testId.value){
-    alert("Test ID kiriting");
-    return;
-  }
-
-  const allTests = JSON.parse(localStorage.getItem("allTests")) || {};
-  allTests[testId.value] = {
-    date:date.value,
-    start:start.value,
-    end:end.value,
-    duration:duration.value,
-    questions:questions
-  };
-  localStorage.setItem("allTests", JSON.stringify(allTests));
-  alert("Test muvaffaqiyatli saqlandi");
-  showTests();
-}
-
-/* ===== SHOW TESTS ===== */
-function showTests(){
-  tests.innerHTML = "";
-  const allTests = JSON.parse(localStorage.getItem("allTests")) || {};
-  for(const id in allTests){
-    tests.innerHTML += `
-      <div class="qitem">
-        <b>${id}</b>
-        <button onclick="editTest('${id}')">✏️</button>
-        <button class="red" onclick="deleteTest('${id}')">❌</button>
-      </div>`;
-  }
-}
-showTests();
-
-function editTest(id){
-  const t = JSON.parse(localStorage.getItem("allTests"))[id];
-  testId.value = id;
-  date.value = t.date;
-  start.value = t.start;
-  end.value = t.end;
-  duration.value = t.duration;
-  questions = t.questions || [];
-  count.innerText = `Savollar: ${questions.length} / 50`;
-  alert("Test yuklandi, o‘zgartirib saqlashingiz mumkin");
-}
-
-function deleteTest(id){
-  const allTests = JSON.parse(localStorage.getItem("allTests"));
-  delete allTests[id];
-  localStorage.setItem("allTests", JSON.stringify(allTests));
-  showTests();
-}
-
-/* ===== LOAD EXCEL ===== */
+/* EXCEL */
 function loadExcel(){
-  const f = excelFile.files[0];
-  if(!f){
-    alert("Excel tanlanmadi");
-    return;
-  }
-
-  const r = new FileReader();
-  r.onload = e=>{
-    const wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
-
-    let added = 0;
-
-    rows.forEach((row, i)=>{
-      if(!row.Savol) return;
-
-      const correct = String(row.Togri || "").trim().toUpperCase();
-      if(!["A","B","C","D"].includes(correct)) return;
-
-      if(questions.length < 50){
+  const f=excelFile.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    rows.forEach(row=>{
+      if(questions.length<50 && row.Savol && ["A","B","C","D"].includes(String(row.Togri))){
         questions.push({
-          text: row.Savol,
-          image: row.Rasm || "",
-          options:{
-            A: row.A || "",
-            B: row.B || "",
-            C: row.C || "",
-            D: row.D || ""
-          },
-          correct: correct
+          text:row.Savol,
+          image:row.Rasm||"",
+          options:{A:row.A||"",B:row.B||"",C:row.C||"",D:row.D||""},
+          correct:String(row.Togri)
         });
-        added++;
       }
     });
-
-    render(); // 🔥 MUHIM
-    excelMsg.innerText = `✅ Excel yuklandi (${added} ta savol)`;
+    renderCount();
+    excelMsg.innerText="Excel yuklandi";
   };
-
   r.readAsArrayBuffer(f);
 }
 
+function renderCount(){
+  count.innerText=`Savollar: ${questions.length} / 50`;
+}
+renderSavedTests();
 </script>
 
 </body>
 </html>
-
