@@ -143,11 +143,57 @@ button{
 
 <h3>📋 Mavjud testlar</h3>
 <div id="tests"></div>
+  <hr>
+<h4>📚 Saqlangan testlar</h2>
+<div id="savedTests"></div>
+
 
 <button class="blue" onclick="location.href='results.html'">📊 Natijalar</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+function renderSavedTests(){
+  const box = document.getElementById("savedTests");
+  const all = JSON.parse(localStorage.getItem("allTests")) || {};
+  box.innerHTML = "";
+
+  if(Object.keys(all).length === 0){
+    box.innerHTML = "<i>Hali test yo‘q</i>";
+    return;
+  }
+
+  Object.keys(all).forEach(id=>{
+    box.innerHTML += `
+      <div class="qitem">
+        <b>${id}</b>
+        <button onclick="editTest('${id}')">✏️ Tahrirlash</button>
+        <button class="red" onclick="deleteTest('${id}')">❌ O‘chirish</button>
+      </div>
+    `;
+  });
+}
+function editTest(id){
+  const all = JSON.parse(localStorage.getItem("allTests")) || {};
+  const t = all[id];
+  if(!t) return;
+
+  testId.value = id;
+  date.value = t.date || "";
+  start.value = t.start || "";
+  end.value = t.end || "";
+  duration.value = t.duration || "";
+
+  questions = t.questions || [];
+  editIndex = null;
+  render();
+}
+function deleteTest(id){
+  if(!confirm("Testni o‘chirasizmi?")) return;
+  const all = JSON.parse(localStorage.getItem("allTests")) || {};
+  delete all[id];
+  localStorage.setItem("allTests", JSON.stringify(all));
+  renderSavedTests();
+}
 
 <script>
 let questions = [];
@@ -266,37 +312,51 @@ function deleteTest(id){
 
 /* ===== LOAD EXCEL ===== */
 function loadExcel(){
-  const file = excelFile.files[0];
-  if(!file){
-    alert("Excel fayl tanlanmadi");
+  const f = excelFile.files[0];
+  if(!f){
+    alert("Excel tanlanmadi");
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = e=>{
-    const data = new Uint8Array(e.target.result);
-    const wb = XLSX.read(data, {type:"array"});
+  const r = new FileReader();
+  r.onload = e=>{
+    const wb = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet);
 
-    rows.forEach(r=>{
-      if(questions.length >= 50) return;
-      if(!r.Savol || !r.Togri) return;
+    let added = 0;
 
-      questions.push({
-        text:r.Savol,
-        image:r.Rasm || "",
-        options:{A:r.A||"",B:r.B||"",C:r.C||"",D:r.D||""},
-        correct:r.Togri
-      });
+    rows.forEach((row, i)=>{
+      if(!row.Savol) return;
+
+      const correct = String(row.Togri || "").trim().toUpperCase();
+      if(!["A","B","C","D"].includes(correct)) return;
+
+      if(questions.length < 50){
+        questions.push({
+          text: row.Savol,
+          image: row.Rasm || "",
+          options:{
+            A: row.A || "",
+            B: row.B || "",
+            C: row.C || "",
+            D: row.D || ""
+          },
+          correct: correct
+        });
+        added++;
+      }
     });
 
-    excelMsg.innerText = `Excel yuklandi: ${questions.length} ta savol`;
-    count.innerText = `Savollar: ${questions.length} / 50`;
+    render(); // 🔥 MUHIM
+    excelMsg.innerText = `✅ Excel yuklandi (${added} ta savol)`;
   };
-  reader.readAsArrayBuffer(file);
+
+  r.readAsArrayBuffer(f);
 }
+
 </script>
 
 </body>
 </html>
+
